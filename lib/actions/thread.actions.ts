@@ -38,3 +38,38 @@ export async function createThread({
     throw new Error(error.message);
   }
 }
+
+export async function fetchThreads(page = 1, size = 20) {
+  connectDB();
+
+  const skip = (page - 1) * size;
+
+  // fetch top level threads which not a comment
+  const threadsQuery = Thread.find({ parentId: { $in: [null, undefined] } })
+    .sort({
+      createdAt: "desc",
+    })
+    .skip(skip)
+    .limit(size)
+    .populate({
+      path: "author",
+      model: "User",
+    })
+    .populate({
+      path: "children",
+      populate: {
+        path: "author",
+        model: "User",
+        select: "_id name parentId image",
+      },
+    });
+
+  const threadsLength = await Thread.countDocuments({
+    parentId: { $in: [null, undefined] },
+  });
+
+  const threads = await threadsQuery.exec();
+  const isNextThreads = threadsLength > skip + threads.length;
+
+  return { threads, isNextThreads };
+}
