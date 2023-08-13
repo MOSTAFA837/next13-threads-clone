@@ -5,6 +5,7 @@ import { connectDB } from "../mongoose";
 import { revalidatePath } from "next/cache";
 import User from "../models/user.model";
 import Thread from "../models/thread.model";
+import { threadId } from "worker_threads";
 
 interface Params {
   text: string;
@@ -72,4 +73,76 @@ export async function fetchThreads(page = 1, size = 20) {
   const isNextThreads = threadsLength > skip + threads.length;
 
   return { threads, isNextThreads };
+}
+
+export async function fetchThreadById(id: string) {
+  connectDB();
+
+  try {
+    return await Thread.findById(id)
+      .populate({
+        path: "author",
+        model: User,
+        select: "_id id name image",
+      })
+      .populate({
+        path: "children",
+        model: Thread,
+        populate: [
+          {
+            path: "author",
+            model: User,
+            select: "_id id name parentId image",
+          },
+          {
+            path: "children",
+            model: Thread,
+            populate: {
+              path: "author",
+              model: User,
+              select: "_id id name parentId image",
+            },
+          },
+        ],
+      });
+  } catch (error: any) {
+    throw new Error(`Unable to fetch thread due to ${error.message}`);
+  }
+}
+
+export async function addCommentToThread(
+  threadId: string,
+  commentText: string,
+  userId: string,
+  path: string
+) {
+  connectDB();
+
+  try {
+    // find the parent thread
+    const parentThread = await Thread.findById(threadId);
+    if (!parentThread) {
+      throw new Error("Thread not found");
+    }
+
+    // Create the new comment thread
+    const commentThread = await new Thread({
+      text: commentText,
+      author: userId,
+      parentId: threadId,
+    }).save();
+
+    // Save the comment thread to the database
+    // const savedCommentThread = await commentThread.save();
+
+    // Add the comment thread's ID to the original thread's children array
+    parentThread.children.push(commentThread._id);
+
+    // Save the updated original thread to the database
+    await parentThread.save();
+
+    revalidatePath(path);
+  } catch (error: any) {
+    throw new Error(`Unable to fetch thread due to ${error.message}`);
+  }
 }
