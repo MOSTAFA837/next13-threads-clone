@@ -1,4 +1,4 @@
-import mongoose, { mongo } from "mongoose";
+import mongoose from "mongoose";
 
 const objectId = mongoose.Schema.Types.ObjectId;
 
@@ -17,7 +17,7 @@ const threadSchema = new mongoose.Schema(
       type: objectId,
       ref: "Community",
     },
-    parenId: {
+    parentId: {
       type: String,
     },
     children: [

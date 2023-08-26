@@ -33,7 +33,7 @@ export default function Comment({
   });
 
   async function onSubmit(values: z.infer<typeof CommentValidation>) {
-    addCommentToThread(
+    await addCommentToThread(
       threadId,
       values.thread,
       JSON.parse(currentUserId),

@@ -5,7 +5,6 @@ import { connectDB } from "../mongoose";
 import { revalidatePath } from "next/cache";
 import User from "../models/user.model";
 import Thread from "../models/thread.model";
-import { threadId } from "worker_threads";
 
 interface Params {
   text: string;
@@ -119,27 +118,28 @@ export async function addCommentToThread(
   connectDB();
 
   try {
-    // find the parent thread
-    const parentThread = await Thread.findById(threadId);
-    if (!parentThread) {
+    // Find the original thread by its ID
+    const originalThread = await Thread.findById(threadId);
+
+    if (!originalThread) {
       throw new Error("Thread not found");
     }
 
     // Create the new comment thread
-    const commentThread = await new Thread({
+    const commentThread = new Thread({
       text: commentText,
       author: userId,
-      parentId: threadId,
-    }).save();
+      parentId: threadId, // Set the parentId to the original thread's ID
+    });
 
     // Save the comment thread to the database
-    // const savedCommentThread = await commentThread.save();
+    const savedCommentThread = await commentThread.save();
 
     // Add the comment thread's ID to the original thread's children array
-    parentThread.children.push(commentThread._id);
+    originalThread.children.push(savedCommentThread._id);
 
     // Save the updated original thread to the database
-    await parentThread.save();
+    await originalThread.save();
 
     revalidatePath(path);
   } catch (error: any) {
