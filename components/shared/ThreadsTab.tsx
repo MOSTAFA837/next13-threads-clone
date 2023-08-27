@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import React from "react";
 import ThreadCard from "../cards/ThreadCard";
-import { fetchUserThreads } from "@/lib/actions/thread.actions";
+import { fetchUserThreads } from "@/lib/actions/user.actions";
 
 interface Props {
   currentUserId: string;
