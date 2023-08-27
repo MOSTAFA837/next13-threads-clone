@@ -16,8 +16,6 @@ export default async function ThreadsTab({
 }: Props) {
   let user = await fetchUserThreads(accountId);
 
-  console.log(user);
-
   if (!user) return redirect("/");
 
   return (
