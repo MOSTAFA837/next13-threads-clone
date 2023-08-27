@@ -146,3 +146,27 @@ export async function addCommentToThread(
     throw new Error(`Unable to fetch thread due to ${error.message}`);
   }
 }
+
+export async function fetchUserThreads(userId: string) {
+  try {
+    connectDB();
+
+    const threads = await User.findOne({ id: userId }).populate({
+      path: "threads",
+      model: Thread,
+      populate: {
+        path: "children",
+        model: Thread,
+        populate: {
+          path: "author",
+          model: User,
+          select: "name image id",
+        },
+      },
+    });
+
+    return threads;
+  } catch (error: any) {
+    throw new Error(`Unable to fetch thread due to ${error.message}`);
+  }
+}
